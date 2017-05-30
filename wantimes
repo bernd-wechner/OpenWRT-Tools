@@ -1,0 +1,82 @@
+#!/usr/bin/python
+import re
+from datetime import datetime, timedelta
+
+# A sample message stream of the sort we want to summarise
+#2017-05-29T00:09:32+10:00 notice netifd[]: Interface 'wan' has link connectivity 
+#2017-05-29T00:09:32+10:00 notice netifd[]: Interface 'wan' is setting up now
+#2017-05-29T00:09:43+10:00 notice netifd[]: Network device 'pppoe-wan' link is up
+#2017-05-29T00:09:43+10:00 notice netifd[]: Interface 'wan6' is enabled
+#2017-05-29T00:09:43+10:00 notice netifd[]: Network alias 'pppoe-wan' link is up
+#2017-05-29T00:09:43+10:00 notice netifd[]: Interface 'wan6' has link connectivity 
+#2017-05-29T00:09:43+10:00 notice netifd[]: Interface 'wan6' is setting up now
+#2017-05-29T00:09:43+10:00 notice netifd[]: Interface 'wan' is now up
+#2017-05-29T00:09:43+10:00 notice firewall[]: Reloading firewall due to ifup of wan (pppoe-wan)
+#2017-05-29T00:09:32+10:00 notice netifd[]: Interface 'wan' has link connectivity 
+#2017-05-29T00:09:32+10:00 notice netifd[]: Interface 'wan' is setting up now
+#2017-05-29T00:09:43+10:00 notice netifd[]: Network device 'pppoe-wan' link is up
+#2017-05-29T00:09:43+10:00 notice netifd[]: Interface 'wan6' is enabled
+#2017-05-29T00:09:43+10:00 notice netifd[]: Network alias 'pppoe-wan' link is up
+#2017-05-29T00:09:43+10:00 notice netifd[]: Interface 'wan6' has link connectivity 
+#2017-05-29T00:09:43+10:00 notice netifd[]: Interface 'wan6' is setting up now
+#2017-05-29T00:09:43+10:00 notice netifd[]: Interface 'wan' is now up
+#2017-05-29T00:09:43+10:00 notice firewall[]: Reloading firewall due to ifup of wan (pppoe-wan)
+#2017-05-29T00:09:54+10:00 notice netifd[]: Interface 'wan6' is now down
+#2017-05-29T00:09:54+10:00 notice netifd[]: Interface 'wan6' is disabled
+#2017-05-29T05:32:29+10:00 notice netifd[]: Interface 'wan6' has link connectivity loss
+#2017-05-29T05:32:29+10:00 notice netifd[]: Interface 'wan' is now down
+#2017-05-29T05:32:29+10:00 notice netifd[]: Interface 'wan' is disabled
+#2017-05-29T05:32:29+10:00 notice netifd[]: Interface 'wan' is enabled
+#2017-05-29T05:32:29+10:00 notice netifd[]: Interface 'wan' is setting up now
+#2017-05-29T05:32:29+10:00 notice netifd[]: Interface 'wan' has link connectivity loss
+#2017-05-29T05:32:33+10:00 notice netifd[]: Interface 'wan' has link connectivity 
+#2017-05-29T05:32:33+10:00 notice netifd[]: Interface 'wan' is setting up now
+#2017-05-29T05:32:36+10:00 notice netifd[]: Interface 'wan' is now down
+#2017-05-29T05:32:36+10:00 notice netifd[]: Interface 'wan' is disabled
+#2017-05-29T05:32:36+10:00 notice netifd[]: Interface 'wan' has link connectivity loss
+#2017-05-29T05:34:15+10:00 notice netifd[]: Interface 'wan' is enabled
+#2017-05-29T05:34:19+10:00 notice netifd[]: Interface 'wan' has link connectivity 
+#2017-05-29T05:34:19+10:00 notice netifd[]: Interface 'wan' is setting up now
+
+def displaymatch(match):
+    if match is None:
+        return None
+    return '<Match: %r, groups=%r>' % (match.group(), match.groups())
+
+def add_time_offet(time, offset):
+    # offset is in log format of [+-]hh:mm
+    match = re.match(r"(?P<dir>[+-])(?P<hours>\d\d):(?P<mins>\d\d)", offset) 
+    delta = timedelta(hours=int(match.group("hours")), minutes=int(match.group("mins")))
+    if match.group("dir") == "+":
+        return time + delta
+    else:
+        return time - delta
+    
+
+log_pattern = r"(?P<time>[0-9T:+-]*)\s+(?P<type>\w*)\s+(?P<process>[\w./_-]*)\[(?P<pid>\d*)\]: (?P<message>.*)"
+
+with open("/var/log/messages") as log_file:
+    for line in log_file:
+        match = re.match(log_pattern, line)
+        if not match is None:
+            off_pattern = r'([+-]\d\d:\d\d$)'
+            off_time = re.search(off_pattern, match.group("time")).group(1)
+            log_time = re.sub(off_pattern, '', match.group("time"))
+            log_time = datetime.strptime(log_time, "%Y-%m-%dT%H:%M:%S")
+            log_time = add_time_offet(log_time, off_time)
+            log_msg = match.group("message")
+
+            if match.group("type") == "notice" and match.group("process") == "netifd":
+                if (log_msg == "Interface 'wan' is now up"):
+                    went_up = log_time
+                elif (log_msg == "Interface 'wan' is now down"):
+                    went_down = log_time
+                    was_up_for = went_down - went_up
+                    print "Link was up for %s until %s" % (was_up_for, datetime.strftime(went_down, "%c"))
+        else:
+            print "NO MATCH: %s" % line
+
+if (went_up > went_down):
+    was_up_for = datetime.now() - went_up
+    print "Link has been up for %s since %s" % (was_up_for, datetime.strftime(went_down, "%c"))
+
