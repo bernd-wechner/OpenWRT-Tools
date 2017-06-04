@@ -42,3 +42,5 @@ for dev in wan_devices:
     print "Received bytes: ", byte_fmt(wan_status['statistics']['rx_bytes'], precision=p)
     print "Transmitted bytes: ", byte_fmt(wan_status['statistics']['tx_bytes'], precision=p)
 
+# TODO: Ad up time, available from:
+# ubus call network.interface.wan status

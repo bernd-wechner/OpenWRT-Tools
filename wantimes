@@ -55,6 +55,9 @@ def add_time_offet(time, offset):
 
 log_pattern = r"(?P<time>[0-9T:+-]*)\s+(?P<type>\w*)\s+(?P<process>[\w./_-]*)\[(?P<pid>\d*)\]: (?P<message>.*)"
 
+went_up = None
+went_down = None
+
 with open("/var/log/messages") as log_file:
     for line in log_file:
         match = re.match(log_pattern, line)
