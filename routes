@@ -64,6 +64,13 @@ for line in fileinput.input(ARP):
 
 print header
 
+# Collect some summary info
+count = len(result)
+# TODO: Count of each Flags category
+# TODO: Count of entries with missing MAC (MAC is 00:00:00:00:00:00
+# TODO: COunt of entries that no name was found for
+
+# Sort the results is requested
 if option == "-i":
 	keys = sorted(result.iterkeys(), key=lambda item: socket.inet_aton(item))
 else:
@@ -71,3 +78,5 @@ else:
 
 for key in keys:
 	print result[key]
+
+print "%d total routes." % count
