@@ -1,0 +1,10 @@
+#!/bin/bash
+domains=($(uci show ddns | grep .domain | sed -e "s/^.*=//" -e "s/^\([\"']\)\(.*\)\1\$/\2/g"))
+
+echo "Dynamic DNS IP status check"
+
+printf "%-20s %s\n" "from WAN" `wanip`  
+
+for (( i=0; i<${#domains[@]}; i++ )); do
+	printf "%-20s %s\n" ${domains[i]} `dig +noall +answer +short ${domains[i]}`  
+done

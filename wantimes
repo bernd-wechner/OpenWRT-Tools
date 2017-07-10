@@ -1,6 +1,8 @@
 #!/usr/bin/python
-import re
+import re, json, subprocess, os
 from datetime import datetime, timedelta
+
+devnull = open(os.devnull, 'w')
 
 # A sample message stream of the sort we want to summarise
 #2017-05-29T00:09:32+10:00 notice netifd[]: Interface 'wan' has link connectivity 
@@ -51,10 +53,62 @@ def add_time_offet(time, offset):
         return time + delta
     else:
         return time - delta
-    
 
+def get_wan_status():
+    try:
+        status = subprocess.check_output(["ubus", "call", "network.interface.wan", "status"], stderr=devnull)
+        return json.loads(status)
+    except:
+        status = None
+
+def duration_formatted(seconds, suffixes=['y','w','d','h','m','s'], add_s=False, separator=' '):
+    """
+    Takes an amount of seconds (as an into or float) and turns it into a human-readable amount of time.
+    """
+    # the formatted time string to be returned
+    time = []
+ 
+    # the pieces of time to iterate over (days, hours, minutes, etc)
+    # - the first piece in each tuple is the suffix (d, h, w)
+    # - the second piece is the length in seconds (a day is 60s * 60m * 24h)
+    parts = [(suffixes[0], 60 * 60 * 24 * 7 * 52),
+             (suffixes[1], 60 * 60 * 24 * 7),
+             (suffixes[2], 60 * 60 * 24),
+             (suffixes[3], 60 * 60),
+             (suffixes[4], 60),
+             (suffixes[5], 1)]
+ 
+    # for each time piece, grab the value and remaining seconds, 
+    # and add it to the time string
+    for suffix, length in parts:
+        if length == 1:
+            value = seconds
+        else:
+            value = int(seconds / length)
+        if value > 0 or length == 1:
+            if length == 1:
+                if isinstance(value, int):
+                    svalue = "{}".format(value)
+                else:
+                    svalue = "{:.2f}".format(value)                
+            else:
+                svalue = str(int(value))
+                seconds = seconds % length       # Remove the part we are printing now
+                
+            time.append('%s%s' % (svalue, (suffix, (suffix, suffix + 's')[value > 1])[add_s]))
+ 
+    return separator.join(time)
+    
 log_pattern = r"(?P<time>[0-9T:+-]*)\s+(?P<type>\w*)\s+(?P<process>[\w./_-]*)\[(?P<pid>\d*)\]: (?P<message>.*)"
 
+# First report the known up time
+wan_status = get_wan_status()
+if wan_status:
+    up_time = datetime.now() - timedelta(seconds=wan_status["uptime"])
+    print "Link has been up for %s since %s" % (duration_formatted(wan_status["uptime"]), datetime.strftime(up_time, "%c"))
+
+
+# Then scan the messages log for down and up reports
 went_up = None
 went_down = None
 
@@ -80,6 +134,6 @@ with open("/var/log/messages") as log_file:
             print "NO MATCH: %s" % line
 
 if (went_up > went_down):
-    was_up_for = datetime.now() - went_up
-    print "Link has been up for %s since %s" % (was_up_for, datetime.strftime(went_down, "%c"))
-
+    was_up_for = duration_formatted(datetime.now() - went_up)
+    print "Link has (apparently) been up for %s since %s" % (was_up_for, datetime.strftime(went_up, "%c"))
+                                            

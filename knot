@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Opens a tty connection to the knot resolver.
 # 
