@@ -32,7 +32,7 @@ import xml.etree.ElementTree as ET  # The API returns XML
 
 # Configurations 
 AuthFile = "~/.auth/namecheap.auth"
-APIURL = "https://api.sandbox.namecheap.com/xml.response"
+APIURL = "https://api.namecheap.com/xml.response"
 XMLprefix = "{http://api.namecheap.com/xml.response}"
 NoIP = "127.0.0.0"
 
