@@ -1,13 +1,40 @@
 #!/bin/sh
 # Logs the new WANIP when the network interface goes up. 
 # Should be in the path of the hotplug daemon and cron
-#
-# The URL needs to be configured to log the apparent WAN IP
 
-reason=${1:-unspecified}
+# Records the last WAN IP seen, only log it if has changed from this
+ipdir='/srv/wan'
+ipfile='ip'
+
+if [ ! -d $ipdir ]; then
+    mkdir -p $ipdir
+fi
+
+# Logs all updates sent (the reponse thereof)
+logdir='/var/log/ddns'
+logfile='wan_ip.log'  
+
+if [ ! -d $logdir ]; then
+    mkdir -p $logdir
+fi
+
+# URL points to a remote service that can accept the log
 urlbase='http://thumbs-place.alwaysdata.net/ddns/'
-logfile='/var/log/ddns/wan_ip.log'
+
+# A reason for the update
+reason=${1:-unspecified}
+
+# Fetch the WAN IP
 wanip=$(ip addr show pppoe-wan|grep inet|awk '{print $2}' | sed 's#/.*##')
-url="$urlbase?wanip=$wanip&reason=$reason"
-result=$(curl -s $url)
-echo $result >> $logfile
+
+# Fetch the last seen WAN IP
+lastip=$(cat $ipdir/$ipfile)
+
+if [ "$wanip" != "$lastip" ]; then
+	url="$urlbase?wanip=$wanip&reason=$reason"
+
+	result=$(curl -s $url)
+
+	echo $wanip > $ipdir/$ipfile
+	echo $result >> $logdir/$logfile
+fi
