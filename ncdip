@@ -51,10 +51,6 @@ parser.add_argument('-H', '--Header', action='store_true', help='Print header li
 
 args = parser.parse_args()
 
-if "help" in args:
-    print parser.format_help()
-    sys.exit()
-
 def readAuth(file):
     auth = {}
     try:
@@ -70,7 +66,6 @@ def readAuth(file):
         sys.exit()
         
     return auth
-
 
 try:
     ClientIP = subprocess.check_output(["wanip"])
@@ -100,19 +95,25 @@ def getDomains():
             Names += [Name]
             
         return Names
+    elif ApiResponse.attrib["Status"] == "ERROR":
+        Errors = ApiResponse.find(XMLprefix+"Errors")
+        print >> sys.stderr, "Errors fetching domain names:"
+        for Error in Errors.findall(XMLprefix+"Error"):
+            print >> sys.stderr, Error.text
+        sys.exit()             
     else:
         return None
 
-def getExpectedIP(domain):
+def getApparentIP(domain):
     try:
         return subprocess.check_output(["dig", "+noall",  "+answer", "+short",  domain])
     except:
-        return "127.0.0.0" # Reserved loopback address
+        return NoIP
     
 def getRegisteredIP(domain):
     global ClientIP
     if ClientIP == NoIP:
-        ClientIP = getExpectedIP(domain)
+        ClientIP = getApparentIP(domain)
         
     parts = domain.split('.')
     TLD = parts[-1]
@@ -133,6 +134,16 @@ def getRegisteredIP(domain):
             IsDDNSEnabled = host.attrib["IsDDNSEnabled"]
             if Type == "A" and IsDDNSEnabled == "true":
                 return Address
+    elif ApiResponse.attrib["Status"] == "ERROR":
+        try:
+            Errors = ApiResponse.find(XMLprefix+"Errors")
+            lstErrorTxt = []
+            for Error in Errors.findall(XMLprefix+"Error"):
+                lstErrorTxt += [Error.text]
+            return ", ".join(lstErrorTxt)
+        except:
+            print >> sys.stderr, "Unable to parse Error response:\n" + response
+            return None
     else:
         return None
 

@@ -1,0 +1,13 @@
+#!/bin/sh
+# Logs the new WANIP when the network interface goes up. 
+# Should be in the path of the hotplug daemon and cron
+#
+# The URL needs to be configured to log the apparent WAN IP
+
+reason=${1:-unspecified}
+urlbase='http://thumbs-place.alwaysdata.net/ddns/'
+logfile='/var/log/ddns/wan_ip.log'
+wanip=$(ip addr show pppoe-wan|grep inet|awk '{print $2}' | sed 's#/.*##')
+url="$urlbase?wanip=$wanip&reason=$reason"
+result=$(curl -s $url)
+echo $result >> $logfile
