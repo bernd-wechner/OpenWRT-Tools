@@ -12,6 +12,7 @@
 	$wanip_logfile = "wanip.log";
 	date_default_timezone_set('Australia/Hobart');
 	$FMT_DATETIME = 'd/m/Y H:i:s';
+	$LOG_LINES = 50;
 	
 	/**
 	 * Slightly modified version of http://www.geekality.net/2011/05/28/php-tail-tackling-large-files/
@@ -160,11 +161,13 @@
 		
 		$html_intro = sprintf("<p>Last WAN IP was logged at %s (%s ago) with stated reason: %s.</p>", $wanip[0], duration_formatted($duration), $wanip[2]);		
 	} elseif ($REQUEST === "WAN") {
-		$wanlog = explode("\n", tail($wanip_logfile, 20));
+		$log_lines = isset($get['lines']) ? $get['lines'] : $LOG_LINES;
+		$wanlog = explode("\n", tail($wanip_logfile, $log_lines));
 		$lines = [];
-		foreach($wanlog as $line)
+		foreach($wanlog as $line) {
 			$cells = explode(", ", $line);
 			array_push($lines, sprintf($FMT, $cells[0], $cells[1], $cells[2]));
+		}
 		$result = join($DELIM, $lines);
 		$html_header = sprintf('<tr><th>%s</th><th>%s</th><th>%s</th></tr>', "Time", "WAN IP logged", "Reason");
 		$html_title = "WAN IP Log Report";
