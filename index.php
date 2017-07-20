@@ -13,6 +13,7 @@
 	date_default_timezone_set('Australia/Hobart');
 	$FMT_DATETIME = 'd/m/Y H:i:s';
 	$LOG_LINES = 50;
+	$PH_EMPHASIZE = "_EMPHASIZE_";  # A placeholder in an a HTML string for an emphasis attribute  
 	
 	/**
 	 * Slightly modified version of http://www.geekality.net/2011/05/28/php-tail-tackling-large-files/
@@ -134,7 +135,7 @@
 		// TODO: Maybe also print it with something like html=WAN or view=WAN
 		$REQUEST = array_key_exists('wanip', $get) ? "WAN" : "DDNS";
 		// 3 cells for either request DDNS or WAN views
-		$FMT = "<tr><td>%s</td><td>%s</td><td>%s</td></tr>";
+		$FMT = "<tr><td>%s</td><td>%s</td><td $PH_EMPHASIZE>%s</td></tr>";
 		$DELIM = "\n"; 
 	}
 
@@ -147,9 +148,11 @@
 			
 		$lines = [sprintf($FMT, "WAN", $wanip[1], "")];
 		foreach($data as $domain=>$ipnc) {
-			$ipdig = shell_exec('dig +noall +answer +short ' . $domain);
-			$ip = filter_var($ipnc, FILTER_VALIDATE_IP) ? $ipnc : "";
-			array_push($lines, sprintf($FMT, $domain, $ip, $ipdig));
+			$ipdig = trim(shell_exec('dig +noall +answer +short ' . $domain));
+			$ip = filter_var($ipnc, FILTER_VALIDATE_IP) ? trim($ipnc) : "";
+			$emphasis = (IsNullOrEmpty($ip) || $ip===$ipdig) ? "" : "class='emphasized'";
+			$line =  str_replace($PH_EMPHASIZE, $emphasis, sprintf($FMT, $domain, $ip, $ipdig));
+			array_push($lines,$line);
 		}		
 		$result = join($DELIM, $lines);
 		$html_header = sprintf('<tr><th>%s</th><th>%s</th><th>%s</th></tr>', "Domain", "NameCheap Registered IP", "Apparent IP from AlwaysData");		

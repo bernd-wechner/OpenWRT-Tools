@@ -5,3 +5,7 @@ body {
 th {
 	text-align: left;
 }
+
+.emphasized {
+	font-weight: bold;
+}
