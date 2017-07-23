@@ -25,7 +25,7 @@
 #    in the past two years. Not a huge hurdle but if you haven't spent $50 you may need to access the API.
 # 3) You need to enable the APi on yoru account and whitelist any IPs from which you access it explicitly.
 #
-#
+
  
 import os, subprocess, urllib, sys, argparse, json
 import xml.etree.ElementTree as ET  # The API returns XML

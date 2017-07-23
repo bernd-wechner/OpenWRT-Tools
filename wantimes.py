@@ -59,7 +59,7 @@ def get_wan_status():
         status = subprocess.check_output(["ubus", "call", "network.interface.wan", "status"], stderr=devnull)
         return json.loads(status)
     except:
-        status = None
+        return None
 
 def duration_formatted(seconds, suffixes=['y','w','d','h','m','s'], add_s=False, separator=' '):
     """

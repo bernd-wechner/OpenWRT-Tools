@@ -22,6 +22,8 @@ corj.add_argument('-j', '--json', action='store_true', help='Print output in JSO
 
 parser.add_argument('-H', '--Header', action='store_true', help='Print header line')
 
+#TDO: Add argument -e which reports only errors (discrepancies).
+
 args = parser.parse_args()
 
 def getApparentIP(domain):
