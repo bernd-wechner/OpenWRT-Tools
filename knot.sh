@@ -17,4 +17,4 @@ if [[ $tty =~ ^-?[0-9]+$ && -a /proc/$tty ]]; then
 	socat - UNIX-CONNECT:$tty_dir/$tty
 else
 	echo "Looks like kresd is not running"
-fi 
+fi

@@ -105,7 +105,7 @@ log_pattern = r"(?P<time>[0-9T:+-]*)\s+(?P<type>\w*)\s+(?P<process>[\w./_-]*)\[(
 wan_status = get_wan_status()
 if wan_status:
     up_time = datetime.now() - timedelta(seconds=wan_status["uptime"])
-    print "Link has been up for %s since %s" % (duration_formatted(wan_status["uptime"]), datetime.strftime(up_time, "%c"))
+    print "Link has been up for %s since %s (from current wan status)" % (duration_formatted(wan_status["uptime"]), datetime.strftime(up_time, "%c"))
 
 
 # Then scan the messages log for down and up reports
@@ -133,7 +133,7 @@ with open("/var/log/messages") as log_file:
         else:
             print "NO MATCH: %s" % line
 
-if (went_up > went_down):
-    was_up_for = duration_formatted(datetime.now() - went_up)
-    print "Link has (apparently) been up for %s since %s" % (was_up_for, datetime.strftime(went_up, "%c"))
+if (went_down is None or went_up > went_down):
+    was_up_for = duration_formatted((datetime.now() - went_up).total_seconds())
+    print "Link has (apparently) been up for %s since %s (from system message log)" % (was_up_for, datetime.strftime(went_up, "%c"))
                                             
