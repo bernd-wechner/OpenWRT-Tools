@@ -2,8 +2,9 @@
 # Logs the new WANIP when the network interface goes up. 
 # Should be in the path of the hotplug daemon and cron
 #
-# TODO: Send email when WANIP is seen to change. 
-# Write a DDNS checker (that uses ddnsip -e?) and sends an email if an error is seen.
+# Takes on argument, the reason for sending the log.
+#
+# TODO: Write a DDNS checker (that uses ddnsip -e?) and sends an email if an error is seen.
 # Run that on an houry cron maybe, or daily. 
 
 # Records the last WAN IP seen, only log it if has changed from this
@@ -42,10 +43,21 @@ wanip=$(ip addr show pppoe-wan|grep inet|awk '{print $2}' | sed 's#/.*##')
 lastip=$(cat $ipdir/$ipfile)
 
 if [ "$wanip" != "$lastip" ]; then
-	url="$urlbase?wanip=$wanip&reason=$reason&key=$APIkey"
-
-	result=$(curl -s $url)
+	result=$(curl -sG $urlbase --data-urlencode "wanip=$wanip" --data-urlencode "reason=$reason" --data-urlencode "key=$APIkey")
 	
 	echo $wanip > $ipdir/$ipfile
 	echo $result >> $logdir/$logfile
+
+	# Send a notification email:
+	#
+	# This is Omnia specific and uses it's notification system to send and email
+	# Settings can be found with "uci -q show user_notify" and set with uci or
+	# through the Foris web interface under Maintenance. Email notifications
+	# have to be enabled there.
+	msg="WAN IP changed from $lastip to $wanip\n\nEvent was logged as:\n\n$result\n\n\nlocally in $logdir/$logfile\nremotely at $urlbase" 
+	create_notification -s news "" "$msg"
+	
+	# Run the notifier to send the message now (by default Onia schedules it pretty often but I want to 
+	# see WANIP updates ASAP. So we run it explicitly to send the email now. 
+	notifier
 fi

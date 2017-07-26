@@ -93,7 +93,7 @@
 	# We use ncdip (NameCheap Domain IP) to fetch the 
 	# the list of DDNS managed domains there and their 
 	# registered IP addresses. 
-	$cgi_bin = $_SERVER['DOCUMENT_ROOT'] . "cgi-bin/";	     # Where the ncdip command can be found
+	$cgi_bin = $_SERVER['DOCUMENT_ROOT'] . "cgi-bin/";	         # Where the ncdip command can be found
 	$auth_file = $_SERVER['HOME'] . "/.auth/namecheap.auth";	 # Where the namecheap auth file can be found
 	$registrar_cmd = $cgi_bin . 'ncdip -j';	            # A local command that returns a JSON dictionary mapping domain name to registered IP address
 	
@@ -240,7 +240,8 @@
 		$FMT = $REQUEST === "WAN" ? "%s, %s, %s": "%s: [%s, %s]";
 		$DELIM = ", "; }
 	else {
-		// if $wanip was an IP address  we already logged it above. If no valid IP is provided, print the wan log
+		// if $wanip was an IP address  we already logged it above. 
+		// If no valid IP is provided, print the wan log
 		// TODO: Maybe also print it with something like html=WAN or view=WAN
 		$REQUEST = array_key_exists('wanip', $get) ? "WAN" : "DDNS";
 		// 3 cells for either request DDNS or WAN views
