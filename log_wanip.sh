@@ -45,7 +45,7 @@ if [ "$wanip" != "$lastip" ]; then
 	url="$urlbase?wanip=$wanip&reason=$reason&key=$APIkey"
 
 	result=$(curl -s $url)
-
+	
 	echo $wanip > $ipdir/$ipfile
 	echo $result >> $logdir/$logfile
 fi

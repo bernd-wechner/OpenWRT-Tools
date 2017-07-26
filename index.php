@@ -182,7 +182,7 @@
 	                $svalue = strval(intval($value));
 	                $seconds = $seconds % $length;       # Remove the part we are printing now
 	            }
-	                
+	               
 	            array_push($time, sprintf('%s%s', $svalue, ($add_s &&  $value>1) ? $suffix . 's' : $suffix));
 	        }
 	    }

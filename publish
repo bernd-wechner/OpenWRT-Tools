@@ -25,6 +25,9 @@
 # as we'll use sshfs to mount them if needed) 
 rsa_file=/home/bernd/.ssh/id_rsa
 
+# A timestamp file to save copying files to webserver unnecessarily
+tsFile="publish.time"
+
 # Router configs
 router=Cerberus
 router_mount_dir=~/Mounts/$router
@@ -45,7 +48,7 @@ webserver_html=$webserver_mount_dir/www/ddns   # The directory for the DDNS diag
 webserver_cgi=$webserver_mount_dir/www/cgi-bin # The ncdip utility is executed by the web page and needs to be in a CGI enabled direrctory on the server 
 webserver_auth=$webserver_mount_dir/.auth	   # ncdip utility expects a ~/.auth/namecheap.auth file to log into the API
 
-# Ensure the router and webserver are properly mounted (or we can't publish to them)
+# Ensure the router is properly mounted (or we can't publish to them)
 if [ ! -d $router_mount_dir ]; then
 	echo Creating $router_mount_dir ... 
     mkdir -p $router_mount_dir
@@ -55,17 +58,6 @@ mountpoint -q $router_mount_dir
 if [ $? != 0 ];then
 	echo Mounting $router_mount_dir ... 
 	sshfs -o IdentityFile=$rsa_file $router_account:$router_dir $router_mount_dir
-fi
-
-if [ ! -d $webserver_mount_dir ]; then
-	echo Creating $webserver_mount_dir ... 
-    mkdir -p $webserver_mount_dir
-fi
-
-mountpoint -q $webserver_mount_dir
-if [ $? != 0 ];then
-	echo Mounting $webserver_mount_dir ... 
-	sshfs -o IdentityFile=$rsa_file $webserver_account:$webserver_dir $webserver_mount_dir
 fi
 
 # Most utilities in roots personal bin directory
@@ -80,15 +72,17 @@ utils=(	ddns_domains.sh
 		ncdip.py 
 		nodename.py 
 		routes.py 
+		search.sh
+		textfile.sh 
 		wanip.sh 
 		wanstat.py 
 		wantimes.py 
 		whois.sh) 
 
-echo Copying binaries to $router root bin...
+echo Copying utilities to $router root bin...
 for filename in ${utils[@]}; do
 	cp $filename $router_root_bin/${filename%.*}	
-done 
+done
 
 # Some in /usr/bin as they need to be in the path of the hotplug daemon or cron
 echo Copying binaries to $router usr bin...
@@ -98,12 +92,39 @@ cp log_wanip.sh $router_usr_bin/log_wanip
 echo Copying hotplug configuration to $router...
 cp hotplug_ddns_log.sh $router_hotplug_file
 
-# The DDNS diagnostics web page on a remote server
-echo Copying web page to $webserver...
-cp index.php default.css $webserver_html
-cp ncdip.py $webserver_cgi/ncdip
+# Check if we need to publish to webserver
+files=(default.css index.php ncdip.py)
+newest=$(stat -c %Y $tsFile)
+newestFile=$tsFile
+for file in ${files[@]}; do
+	filetime=$(stat -c %Y $file)
+	[[ $filetime -gt $newest ]] && newest=$filetime && newestFile="$file"
+done
 
-# Handle the auth file specially (used to access the Namecheap API and for logging WAN IPs)
-cp ~/.auth/namecheap.auth $webserver_auth
+if [[ "$newestFile" != "$tsFile" ]]; then
+	# Ensure the webserver is properly mounted (or we can't publish to them)
+	if [ ! -d $webserver_mount_dir ]; then
+		echo Creating $webserver_mount_dir ... 
+	    mkdir -p $webserver_mount_dir
+	fi
+	
+	mountpoint -q $webserver_mount_dir
+	if [ $? != 0 ];then
+		echo Mounting $webserver_mount_dir ... 
+		sshfs -o IdentityFile=$rsa_file $webserver_account:$webserver_dir $webserver_mount_dir
+	fi
+	
+	# The DDNS diagnostics web page on a remote server
+	echo Copying web page to $webserver...
+	cp index.php default.css $webserver_html
+	cp ncdip.py $webserver_cgi/ncdip
+	
+	# Handle the auth file specially (used to access the Namecheap API and for logging WAN IPs)
+	cp ~/.auth/namecheap.auth $webserver_auth
+	
+	touch $tsFile
+else
+	echo $webserver files are up to date.
+fi
 
 echo Done.
