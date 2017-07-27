@@ -33,7 +33,7 @@ parser.add_argument('-w', '--Web', action='store_true', help='Use a webservice t
 args = parser.parse_args()
 
 try:
-    WANIP = subprocess.check_output(["wanip"]).strip() + "dirty"
+    WANIP = subprocess.check_output(["wanip"]).strip()
 except:
     WANIP = NoIP
 

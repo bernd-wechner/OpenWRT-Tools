@@ -60,10 +60,8 @@ if [ $? != 0 ];then
 	sshfs -o IdentityFile=$rsa_file $router_account:$router_dir $router_mount_dir
 fi
 
-# Most utilities in roots personal bin directory
-utils=(	clear_notifications.sh
-		ddns_domains.sh 
-		ddnsip.py 
+# Personal utiltiites: Most utilities in roots personal bin directory
+putils=(clear_notifications.sh
 		dns.py 
 		IPnames.py 
 		IPowner.sh 
@@ -76,19 +74,26 @@ utils=(	clear_notifications.sh
 		routes.py 
 		search.sh
 		textfile.sh 
-		wanip.sh 
 		wanstat.py 
 		wantimes.py 
-		whois.sh) 
+		whois.sh)
 
-echo Copying utilities to $router root bin...
-for filename in ${utils[@]}; do
+# Global utilities: Some go to /usr/bin so they are in the defaul path for cron and the hotplug daemon 		
+gutils=(ddns_domains.sh 
+		ddnsip.py
+		log_wanip.sh 
+		wanip.sh) 
+ 
+echo Copying utilities to $router /root/bin...
+for filename in ${putils[@]}; do
 	cp $filename $router_root_bin/${filename%.*}	
 done
 
 # Some in /usr/bin as they need to be in the path of the hotplug daemon or cron
-echo Copying binaries to $router usr bin...
-cp log_wanip.sh $router_usr_bin/log_wanip
+echo Copying binaries to $router /usr/bin...
+for filename in ${gutils[@]}; do
+	cp $filename $router_usr_bin/${filename%.*}	
+done
 
 # Special hotplug configuration for wanip logging 
 echo Copying hotplug configuration to $router...
