@@ -61,13 +61,15 @@ if [ $? != 0 ];then
 fi
 
 # Most utilities in roots personal bin directory
-utils=(	ddns_domains.sh 
+utils=(	clear_notifications.sh
+		ddns_domains.sh 
 		ddnsip.py 
 		dns.py 
 		IPnames.py 
 		IPowner.sh 
 		knot.sh 
-		lanstat.py 
+		lanstat.py
+		list_notifications.sh 
 		MACnames.py 
 		ncdip.py 
 		nodename.py 

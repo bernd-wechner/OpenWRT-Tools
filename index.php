@@ -244,8 +244,12 @@
 		// If no valid IP is provided, print the wan log
 		// TODO: Maybe also print it with something like html=WAN or view=WAN
 		$REQUEST = array_key_exists('wanip', $get) ? "WAN" : "DDNS";
-		// 3 cells for either request DDNS or WAN views
-		$FMT = "<tr><td>%s</td><td>%s</td><td $PH_EMPHASIZE>%s</td></tr>";
+		// 3 cells with emphasis for DDNS views 
+		if ($REQUEST === "DDNS") 
+			$FMT = "<tr><td>%s</td><td>%s</td><td $PH_EMPHASIZE>%s</td></tr>";
+		// 5 cells with annotation for WAN views
+		elseif ($REQUEST === "WAN")		 
+			$FMT = "<tr><td>%s</td><td>for</td><td align=right>%s</td><td>until</td><td align=right>%s.</td><td>Changed to:</td><td>%s</td><td>Reason:</td><td>%s</td></tr>";
 		$DELIM = "\n"; 
 	}
 
@@ -272,17 +276,34 @@
 		
 		$html_intro = sprintf("<p>Last WAN IP was logged %s ago (at %s) with stated reason: %s.</p>", duration_formatted($duration), $wanip[0], $wanip[2]);		
 	} elseif ($REQUEST === "WAN") {
+		// TODO: Update to look like the wanip utility
 		$log_lines = isset($get['lines']) ? $get['lines'] : $LOG_LINES;
 		$wanlog = explode("\n", tail($wanip_logfile, $log_lines));
 		$lines = [];
+		$prev_time = 0;
+		$prev_IP = "unknown";
 		foreach($wanlog as $line) {
 			$cells = explode(", ", $line);
-			array_push($lines, sprintf($FMT, $cells[0], $cells[1], $cells[2]));
+			$log_time = date_create_from_format($FMT_DATETIME, $cells[0]);
+			if ( $prev_time == 0 ) {
+				$diff_time = "";
+			} else {
+				$diff_time = duration_formatted($log_time->getTimestamp() - $prev_time->getTimestamp());
+			}
+			array_push($lines, sprintf($FMT, $prev_IP, $diff_time, trim($cells[0]), trim($cells[1]), trim($cells[2])));
+			$prev_time = $log_time;
+			$prev_IP = $cells[1]; 
 		}
+	
+		$now = date_create_from_format($FMT_DATETIME, date($FMT_DATETIME, time()));
+		$diff_time = duration_formatted($now->getTimestamp() - $prev_time->getTimestamp());
+		$FMT = "<tr><td>%s</td><td>for</td><td align=right>%s</td><td>until</td><td>%s</td><td></td><td></td><td></td><td></td></tr>";
+		array_push($lines, sprintf($FMT, $prev_IP, $diff_time, "now."));
+		
 		$result = join($DELIM, $lines);
-		$html_header = sprintf('<tr><th>%s</th><th>%s</th><th>%s</th></tr>', "Time", "WAN IP logged", "Reason");
+		$html_header = '<tr><th>WAN IP</th><th></th><th>Duration held</th><th></th><th>Until</th><th></th><th>New IP</th><th></th><th>Reason</th></tr>';
 		$html_title = "WAN IP Log Report";
-		$html_intro = "<p>WAN IPs should be logged here every time the WAN IP changes and the DNNS domains should be updated.</p>";		
+		$html_intro = "<p>WAN IPs should be logged here every time the WAN IP changes and the DNNS domains were updated.</p>";		
 	}
 ?>
 
