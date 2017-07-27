@@ -105,7 +105,7 @@ log_pattern = r"(?P<time>[0-9T:+-]*)\s+(?P<type>\w*)\s+(?P<process>[\w./_-]*)\[(
 wan_status = get_wan_status()
 if wan_status:
     up_time = datetime.now() - timedelta(seconds=wan_status["uptime"])
-    print "Link has been up for %s since %s (from current wan status)" % (duration_formatted(wan_status["uptime"]), datetime.strftime(up_time, "%c"))
+    print "Link has been up for %s since %s (from current WAN status)" % (duration_formatted(wan_status["uptime"]), datetime.strftime(up_time, "%c"))
 
 
 # Then scan the messages log for down and up reports
