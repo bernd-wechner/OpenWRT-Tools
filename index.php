@@ -1,13 +1,26 @@
 <?php
 	/*
-	This resides at: http://thumbs-place.alwaysdata.net/ddns
+	This currently resides at: http://thumbs-place.alwaysdata.net/ddns
 	
 	It's purpose: To provide DDNS diagnostics for thumbs.place and all related domains.
 	
+	It's pretty generic and can be adapted to anyone's use with a little effort. And ifyou're managing 
+	a DDNS domain or a set of them pointing to your home router you might find this diagnostic handy too.  
+	
 	It's function:
 		Takes the following URL GET parameters:
+				
+		None: A basic DDNS diagnostics page which lists all
 		
-		None: A basic DDNS diagnostics page which lists all 
+		view: can be WAN or DDNS (any case). 
+			DDNS is the default view and selected when no GET paramers are provided. So these are identical:
+				http://site/?view=ddns
+				http://site
+			 
+			WAN is the view you bet with wanip and no IP address too so these are 
+			identical:   
+				http://site/?view=wan
+				http://site/?wanip
 		
 		wanip=ipaddress: 
 			Logs that IP address in a WAN IP log. 
@@ -76,9 +89,7 @@
 		finger blame at the domain registrar. And this is in fact exatly what I've seen with my DDNS domains
 		from time to time.
 		
-		All three are presented on the DDNS Diagnostic page.
-		
-		TODO: Needs https on the waniup logging and a password or SSH key ro some form of security 
+		All three are presented on the DDNS Diagnostic page. 
 	*/
 
 	# Force https access
@@ -237,13 +248,16 @@
 	// Valid REQUESTS at present: DDNS and WAN	
 	if ($FORMAT==="JSON") {
 		$REQUEST = IsNullOrEmpty($get['json']) ? "DDNS" : $get['json'];
-		$FMT = $REQUEST === "WAN" ? "%s, %s, %s": "%s: [%s, %s]";
+		$FMT = $REQUEST === "WAN" ? '"%s": ["%s", "%s"]': '"%s": ["%s", "%s"]';
 		$DELIM = ", "; }
 	else {
 		// if $wanip was an IP address  we already logged it above. 
 		// If no valid IP is provided, print the wan log
-		// TODO: Maybe also print it with something like html=WAN or view=WAN
-		$REQUEST = array_key_exists('wanip', $get) ? "WAN" : "DDNS";
+		if (array_key_exists('view', $get)) {
+			$REQUEST = strtoupper($get['view']);
+		} else {
+			$REQUEST = array_key_exists('wanip', $get) ? "WAN" : "DDNS";
+		}
 		// 3 cells with emphasis for DDNS views 
 		if ($REQUEST === "DDNS") 
 			$FMT = "<tr><td>%s</td><td>%s</td><td $PH_EMPHASIZE>%s</td></tr>";
@@ -276,7 +290,6 @@
 		
 		$html_intro = sprintf("<p>Last WAN IP was logged %s ago (at %s) with stated reason: %s.</p>", duration_formatted($duration), $wanip[0], $wanip[2]);		
 	} elseif ($REQUEST === "WAN") {
-		// TODO: Update to look like the wanip utility
 		$log_lines = isset($get['lines']) ? $get['lines'] : $LOG_LINES;
 		$wanlog = explode("\n", tail($wanip_logfile, $log_lines));
 		$lines = [];

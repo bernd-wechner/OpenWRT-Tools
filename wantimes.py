@@ -1,8 +1,21 @@
 #!/usr/bin/python
-import re, json, subprocess, os
+import re, json, subprocess, os, argparse, gzip
 from datetime import datetime, timedelta
 
+log_dir = '/var/log'
+messages_file = 'messages'
+messages_file_RE = messages_file + '\.(?P<num>[0-9]+)(\.gz)?' 
+
 devnull = open(os.devnull, 'w')
+
+parser = argparse.ArgumentParser(description='Report WAN up times as they appear in the system log file.',
+                                 formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=20))
+
+parser.add_argument('-l', '--Logs', action='store_true', help='Dump the actual log file entries found.')
+parser.add_argument('-L', '--LogSummary', action='store_true', help='Print a summary of the message log file.')
+parser.add_argument('-T', '--Test', nargs=1, help='Print a summary of the message log file.')
+
+args = parser.parse_args()
 
 # A sample message stream of the sort we want to summarise
 #2017-05-29T00:09:32+10:00 notice netifd[]: Interface 'wan' has link connectivity 
@@ -101,39 +114,76 @@ def duration_formatted(seconds, suffixes=['y','w','d','h','m','s'], add_s=False,
     
 log_pattern = r"(?P<time>[0-9T:+-]*)\s+(?P<type>\w*)\s+(?P<process>[\w./_-]*)\[(?P<pid>\d*)\]: (?P<message>.*)"
 
-# First report the known up time
-wan_status = get_wan_status()
-if wan_status:
-    up_time = datetime.now() - timedelta(seconds=wan_status["uptime"])
-    print "Link has been up for %s since %s (from current WAN status)" % (duration_formatted(wan_status["uptime"]), datetime.strftime(up_time, "%c"))
-
-
 # Then scan the messages log for down and up reports
 went_up = None
 went_down = None
+count = 0
 
-with open("/var/log/messages") as log_file:
+# Build the list of log files. The appear as messages, messages.1, messages.2 ... messages.10, messages.11 ...
+log_files = [messages_file]
+
+num_files = [f for f in os.listdir(log_dir) if re.match(messages_file_RE, f)]
+dic_files = {}
+for file in num_files:    
+    num = re.match(messages_file_RE, file).group("num")
+    dic_files[int(num)] = file
+for num in sorted(dic_files.iterkeys()):
+    log_files += [dic_files[num]]
+log_files.reverse()
+
+# Now parse the log files
+output = []
+for file in log_files:
+    if file.endswith('.gz'):
+        log_file = gzip.open(log_dir+'/'+file)
+    else:
+        log_file = open(log_dir+'/'+file) 
+        
+    file_line=0
     for line in log_file:
+        file_line += 1
         match = re.match(log_pattern, line)
         if not match is None:
+            count += 1
             off_pattern = r'([+-]\d\d:\d\d$)'
             off_time = re.search(off_pattern, match.group("time")).group(1)
             log_time = re.sub(off_pattern, '', match.group("time"))
             log_time = datetime.strptime(log_time, "%Y-%m-%dT%H:%M:%S")
             log_time = add_time_offet(log_time, off_time)
             log_msg = match.group("message")
+            
+            if count == 1:
+                log_first = log_time
 
             if match.group("type") == "notice" and match.group("process") == "netifd":
+                if args.Logs:
+                    print line.strip()
+                
                 if (log_msg == "Interface 'wan' is now up"):
                     went_up = log_time
                 elif (log_msg == "Interface 'wan' is now down"):
                     went_down = log_time
                     was_up_for = went_down - went_up
-                    print "Link was up for %s until %s" % (was_up_for, datetime.strftime(went_down, "%c"))
-        else:
-            print "NO MATCH: %s" % line
+                    output += ["Link was up for %s until %s" % (was_up_for, datetime.strftime(went_down, "%c"))]
+        elif len(line.strip()) > 0:
+            print "Warning: Ill formed log line in %s (line %s) was ignored: %s" % (file, file_line, line)
+        
+log_last = log_time
 
-if (went_down is None or went_up > went_down):
+# Report a summary of the system log file first if asked
+if args.LogSummary:
+    print "System log has %s entries, spanning %s between %s and %s" % (count, duration_formatted((log_last - log_first).total_seconds()), log_first, log_last)
+
+# Then report the known up time
+wan_status = get_wan_status()
+if wan_status:
+    up_time = datetime.now() - timedelta(seconds=wan_status["uptime"])
+    print "Link has been up for %s since %s (from current WAN status)" % (duration_formatted(wan_status["uptime"]), datetime.strftime(up_time, "%c"))
+
+# And finally the uptimes from the system log file
+print "\n".join(output)
+
+if (went_down is None and not went_up is None  or went_up > went_down):
     was_up_for = duration_formatted((datetime.now() - went_up).total_seconds())
     print "Link has (apparently) been up for %s since %s (from system message log)" % (was_up_for, datetime.strftime(went_up, "%c"))
                                             

@@ -63,15 +63,13 @@ fi
 # Personal utiltiites: Most utilities in roots personal bin directory
 putils=(clear_notifications.sh
 		dns.py 
-		IPnames.py 
 		IPowner.sh 
 		knot.sh 
+		lanip.sh
 		lanstat.py
 		list_notifications.sh 
-		MACnames.py 
 		ncdip.py 
 		nodename.py 
-		routes.py 
 		search.sh
 		textfile.sh 
 		wanstat.py 
@@ -79,9 +77,13 @@ putils=(clear_notifications.sh
 		whois.sh)
 
 # Global utilities: Some go to /usr/bin so they are in the defaul path for cron and the hotplug daemon 		
-gutils=(ddns_domains.sh 
+gutils=(ddns_domains.sh
+		ddns_web.sh 
 		ddnsip.py
-		log_wanip.sh 
+		IPnames.py
+		log_wanip.sh
+		MACnames.py
+		routes.py 
 		wanip.sh) 
  
 echo Copying utilities to $router /root/bin...

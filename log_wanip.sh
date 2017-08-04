@@ -1,11 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 # Logs the new WANIP when the network interface goes up. 
 # Should be in the path of the hotplug daemon and cron
 #
-# Takes on argument, the reason for sending the log.
-#
-# TODO: Write a DDNS checker (that uses ddnsip -e?) and sends an email if an error is seen.
-# Run that on an houry cron maybe, or daily. 
+# Takes one argument, the reason for sending the log.
 
 # Records the last WAN IP seen, only log it if has changed from this
 ipdir='/srv/wan'
@@ -54,7 +51,8 @@ if [ "$wanip" != "$lastip" ]; then
 	# Settings can be found with "uci -q show user_notify" and set with uci or
 	# through the Foris web interface under Maintenance. Email notifications
 	# have to be enabled there.
-	msg="WAN IP changed from $lastip to $wanip\n\nEvent was logged as:\n\n$result\n\n\nlocally in $logdir/$logfile\nremotely at $urlbase" 
+	nl=$'\n'
+	msg=$"WAN IP changed from $lastip to $wanip${nl}${nl}Event was logged as:${nl}${nl}$result${nl}${nl}locally in $logdir/$logfile${nl}remotely at $urlbase" 
 	create_notification -s news "" "$msg"
 	
 	# Run the notifier to send the message now (by default Onia schedules it pretty often but I want to 

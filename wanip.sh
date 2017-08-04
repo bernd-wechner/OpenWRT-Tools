@@ -1,6 +1,8 @@
 #!/bin/bash
 #
 # Prints the apparent WAN address of this OpenWRT router
+#
+# -h: print a history of WAN IPs
 
 # Records of WAN IP values seen, logged by log_wanip.sh
 logdir='/var/log/ddns'

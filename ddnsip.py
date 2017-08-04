@@ -8,7 +8,8 @@
 import os, subprocess, urllib, sys, argparse, json
 import xml.etree.ElementTree as ET  # The API returns XML
 
-# Configurations 
+# Configurations
+web_header = ["NameCheap", "Cerberus", "AlwaysData"]
 NoIP = "127.0.0.0"
 devnull = open(os.devnull, 'w')
 
@@ -19,16 +20,21 @@ parser = argparse.ArgumentParser(description='Report all DDNS domains on the rou
                                  formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=25))
 
 parser.add_argument('DomainName', nargs='?', help='A domain name to report on. Else reports on all domains being managed by the DDNS service in this OpenWRT router')
+
 corj = parser.add_mutually_exclusive_group()
 corj.add_argument('-c', '--csv', action='store_true', help='Print output in CSV format')
 corj.add_argument('-j', '--json', action='store_true', help='Print output in JSON format')
 
-parser.add_argument('-H', '--Header', action='store_true', help='Print header line')
-parser.add_argument('-e', '--ErrorReport', action='store_true', help='Produce an error report')
-parser.add_argument('-n', '--Notify', action='store_true', help='Notify administrator of results')
-parser.add_argument('-w', '--Web', action='store_true', help='Use a webservice to improve results')
+Worw = parser.add_mutually_exclusive_group()
+Worw.add_argument('-w', '--Web', action='store_true', help='Use a webservice to improve results but only if there\'s a WAN IP/Apparent IP discrepancy.')
+Worw.add_argument('-W', '--WebForce', action='store_true', help='Use a webservice to improve results')
 
-#TDO: Add argument -e which reports only errors (discrepancies).
+parser.add_argument('-H', '--Header', action='store_true', help='Print header line')
+parser.add_argument('-n', '--Notify', action='store_true', help='Notify administrator of results')
+
+Eore = parser.add_mutually_exclusive_group()
+Eore.add_argument('-e', '--ErrorReport', action='store_true', help='Report only errors')
+Eore.add_argument('-E', '--EmphasizeErrors', action='store_true', help='Emphasizes errors in the report')
 
 args = parser.parse_args()
 
@@ -49,14 +55,21 @@ def getApparentIP(domain):
     except:
         return NoIP
 
+def getWebData():
+    try:
+        return json.loads(subprocess.check_output(["ddns_web", "-j"]).strip())
+    except:
+        return None
+
 def notify(status, message):
     try:
         subprocess.check_call(["create_notification", "-s", status, "", message], stderr=devnull, stdout=devnull)
         subprocess.check_call(["notifier"], stderr=devnull, stdout=devnull)
     except:
         return "Error: Notification failed."
-    
+
 results = {}
+errors = 0
 maxlen = 0
 if args.DomainName:
     if args.DomainName == "WAN":
@@ -73,6 +86,11 @@ else:
     if isinstance(Domains, list):
         for Domain in Domains:
             IP = getApparentIP(Domain)
+            if IP != WANIP:
+                errors += 1
+
+            if args.EmphasizeErrors and IP != WANIP:
+                Domain = Domain.upper()
             
             if args.ErrorReport:
                 if IP != WANIP:
@@ -87,11 +105,39 @@ else:
         print >> sys.stderr, "No domains are being managed by the DDNS service"
         sys.exit()
 
+# Get web data if requested (this can be a bit slow so is not on by default)
+results_web = None
+if args.WebForce and args.ErrorReport and errors == 0:
+    args.WebForce = False  
+if args.WebForce or (args.Web and errors > 0):
+    results_web = getWebData()
+
+# Now augment the results with web service sourced data if we have it
+if not results_web is None:
+    for Domain in results:
+        LowerDomain = Domain.lower()
+        if Domain == "WAN":
+            IP_registered = ""
+            IP_apparent = ""
+        elif LowerDomain in results_web:
+            IP_registered = results_web[LowerDomain][0]
+            IP_apparent = results_web[LowerDomain][1]
+        else:
+            IP_registered = "unknown"
+            IP_apparent = "unknown"
+        
+        if args.ErrorReport:
+            results[Domain] = (IP_registered, results[Domain][0], IP_apparent, WANIP)
+        else:
+            results[Domain] = (IP_registered, results[Domain][0], IP_apparent)
+
 if args.json:
     print json.dumps(results)
 else:
     if args.csv:
         template = "{}, {}"
+        if not results_web is None:
+            template += ", {}, {}"
         if args.ErrorReport:
             template += ", {}"
     else:
@@ -101,20 +147,27 @@ else:
             justifier = ">"
             
         template = "{:" + justifier + str(maxlen) + "} {:<15}"
+        if not results_web is None:
+            template += " {:<15} {:<15}"
         if args.ErrorReport:
-            template += " {}"
+            template += " {:<15}"
     
     if args.Header and args.ErrorReport and len(results)> 0:
         output = ["Dynamic DNS update errors detected.\n"]
+        output += ["Diagnostics tools can be found at: http://thumbs-place.alwaysdata.net/ddns\n"]
     else:
         output = []
     
     if args.Header:
-        IPheader = ["Apparent IP"]
+        if not results_web is None:
+            IPheader = [web_header[0]+" IP", web_header[1]+" IP", web_header[2]+" IP"]
+        else:
+            IPheader = ["Apparent IP"]
+            
         if args.ErrorReport:
             IPheader += ["Expected IP"]
             
-        if not args.ErrorReport or len(results) > 0:
+        if errors > 0 or not args.ErrorReport:
             output += [template.format("Domain", *IPheader)]
         
     for domain in results:
@@ -130,4 +183,3 @@ else:
         else:
             for line in output:
                 print line
-        
