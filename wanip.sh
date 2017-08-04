@@ -25,13 +25,31 @@ function duration {
 	printf '%ds' $S
 }
 
+trim() { 
+	# A Bash internals method
+  	local var="$*"
+  	var="${var#"${var%%[![:space:]]*}"}" # trim leading whitespace chars
+  	var="${var%"${var##*[![:space:]]}"}" # trim trailing whitespace chars
+	echo -n "$var"
+	
+	# A sed method
+	#sed 's/^[[:blank:]]*//;s/[[:blank:]]*$//' <<< "$1"
+	
+	# An awk method 
+	#awk '{$1=$1;print}' <<< $*
+}
+
 wanIP=$(ip addr show pppoe-wan|grep inet|awk '{print $2}' | sed 's#/.*##')
 
 if [[ $1 == "-h" ]]; then
-	prv_IP=" unknown"
+	prv_IP="unknown"
 	prv_secs=0
 	while IFS="," read logtime IP reason
 	do
+		logtime=$(trim $logtime) 
+		IP=$(trim $IP) 
+		reason=$(trim $reason) 
+		
 	    log_secs=$(date -d"$logtime" -D"%d/%m/%Y %H:%M:%S" +"%s")
 	    if (( prv_secs == 0 )); then
 	    	diff_secs=""
@@ -51,7 +69,7 @@ if [[ $1 == "-h" ]]; then
 	(( diff_secs = now_secs - prv_secs ))
 	diff_dur=$(duration $diff_secs)
 	
-	printf '%15s for %17s until now.\n' "$wanIP" "$diff_dur"
+	printf '%-15s for %17s until now.\n' "$wanIP" "$diff_dur"
 else
 	echo $wanIP
 fi
