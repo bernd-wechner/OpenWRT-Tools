@@ -34,12 +34,25 @@ keyfile='namecheap.auth'
 source $keydir/$keyfile
 
 # Fetch the WAN IP
-wanip=$(ip addr show pppoe-wan|grep inet|awk '{print $2}' | sed 's#/.*##')
+
+wanip=""
+tries=0
+
+# WAN IP may not be available the second the ifup event triggers a hotplug
+# Retry until it is or a time is up (30mins)
+while [[ "$wanip" == "" ]] && (( tries < 60 )); do
+	wanip=$(ip addr show pppoe-wan|grep inet|awk '{print $2}' | sed 's#/.*##')
+	if [[ "$wanip" == "" ]]; then sleep 30; fi
+	(( tries++ ))	
+done
+
+# IF we still don't have it, say so
+if [[ "$wanip" == "" ]]; then wanip="unknown"; fi
 
 # Fetch the last seen WAN IP
 lastip=$(cat $ipdir/$ipfile)
 
-if [ "$wanip" != "$lastip" ]; then
+if [[ "$wanip" != "$lastip" ]]; then
 	result=$(curl -sG $urlbase --data-urlencode "wanip=$wanip" --data-urlencode "reason=$reason" --data-urlencode "key=$APIkey")
 	
 	echo $wanip > $ipdir/$ipfile
