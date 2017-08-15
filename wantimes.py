@@ -181,7 +181,8 @@ if wan_status:
     print "Link has been up for %s since %s (from current WAN status)" % (duration_formatted(wan_status["uptime"]), datetime.strftime(up_time, "%c"))
 
 # And finally the uptimes from the system log file
-print "\n".join(output)
+if len(output) > 0:
+    print "\n".join(output)
 
 if (went_down is None and not went_up is None  or went_up > went_down):
     was_up_for = duration_formatted((datetime.now() - went_up).total_seconds())

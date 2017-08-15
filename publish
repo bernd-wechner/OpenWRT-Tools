@@ -65,7 +65,6 @@ putils=(clear_notifications.sh
 		dns.py 
 		IPowner.sh 
 		knot.sh 
-		lanip.sh
 		lanstat.py
 		list_notifications.sh 
 		ncdip.py 
@@ -80,7 +79,9 @@ putils=(clear_notifications.sh
 gutils=(ddns_domains.sh
 		ddns_web.sh 
 		ddnsip.py
+		dhcp_watch.sh
 		IPnames.py
+		lanip.sh
 		log_wanip.sh
 		MACnames.py
 		routes.py 

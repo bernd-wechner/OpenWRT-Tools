@@ -46,7 +46,7 @@ while [[ "$wanip" == "" ]] && (( tries < 60 )); do
 	(( tries++ ))	
 done
 
-# IF we still don't have it, say so
+# If we still don't have it, say so with clarity.
 if [[ "$wanip" == "" ]]; then wanip="unknown"; fi
 
 # Fetch the last seen WAN IP
@@ -68,7 +68,7 @@ if [[ "$wanip" != "$lastip" ]]; then
 	msg=$"WAN IP changed from $lastip to $wanip${nl}${nl}Event was logged as:${nl}${nl}$result${nl}${nl}locally in $logdir/$logfile${nl}remotely at $urlbase" 
 	create_notification -s news "" "$msg"
 	
-	# Run the notifier to send the message now (by default Onia schedules it pretty often but I want to 
+	# Run the notifier to send the message now (by default Omnia schedules it pretty often but I want to 
 	# see WANIP updates ASAP. So we run it explicitly to send the email now. 
 	notifier
 fi
