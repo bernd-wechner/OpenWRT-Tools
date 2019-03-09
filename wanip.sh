@@ -3,6 +3,8 @@
 # Prints the apparent WAN address of this OpenWRT router
 #
 # -h: print a history of WAN IPs
+# -4 prints the IPv4 WAN address only
+# -6 prints the IPv6 WAN address only
 
 # Records of WAN IP values seen, logged by log_wanip.sh
 logdir='/var/log/ddns'
@@ -39,7 +41,8 @@ trim() {
 	#awk '{$1=$1;print}' <<< $*
 }
 
-wanIP=$(ip addr show pppoe-wan|grep inet|awk '{print $2}' | sed 's#/.*##')
+wanIP4=$(ip addr show pppoe-wan|egrep "\binet\b"|awk '{print $2}' | sed 's#/.*##')
+wanIP6=$(ip addr show pppoe-wan|egrep "\binet6\b"|awk '{print $2}' | sed 's#/.*##')
 
 if [[ $1 == "-h" ]]; then
 	prv_IP="unknown"
@@ -70,6 +73,11 @@ if [[ $1 == "-h" ]]; then
 	diff_dur=$(duration $diff_secs)
 	
 	printf '%-15s for %17s until now.\n' "$wanIP" "$diff_dur"
+elif [[ $1 == "-4" ]]; then
+	echo $wanIP4
+elif [[ $1 == "-6" ]]; then
+	echo $wanIP6
 else
-	echo $wanIP
+	echo $wanIP4
+	echo $wanIP6
 fi

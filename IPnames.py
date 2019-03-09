@@ -6,6 +6,9 @@
 # Builds list by checking
 # 	Active DHCP leases
 # 	DHCP Configuration 
+#
+# TODO: implement argparse
+# TODO: implement -H option to add headers.
 
 import os
 import sys

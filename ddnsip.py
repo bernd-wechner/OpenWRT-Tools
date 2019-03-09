@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Fetch all the DDNS domains on this OpenWRT router and list then along with the apparent IP address.
+# Fetch all the DDNS domains on this OpenWRT router and list them along with the apparent IP address.
 # Or if a domain is specified then only for that domain.
 # 
 # A special domain "WAN" is listed for the apparent WAN address.
@@ -39,7 +39,7 @@ Eore.add_argument('-E', '--EmphasizeErrors', action='store_true', help='Emphasiz
 args = parser.parse_args()
 
 try:
-    WANIP = subprocess.check_output(["wanip"]).strip()
+    WANIP = subprocess.check_output(["wanip", "-4"]).strip()
 except:
     WANIP = NoIP
 
@@ -51,7 +51,8 @@ def getDomains():
 
 def getApparentIP(domain):
     try:
-        return subprocess.check_output(["dig", "+noall",  "+answer", "+short",  domain]).strip()
+        # for CNAME records (commonly subdomains) dig retrusn two lines and the IP is on the second
+        return subprocess.check_output(["dig", "+noall",  "+answer", "+short",  domain]).strip().split("\n")[-1]
     except:
         return NoIP
 
