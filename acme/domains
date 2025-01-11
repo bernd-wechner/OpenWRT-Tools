@@ -1,0 +1,76 @@
+thumbs.place
+arachne.thumbs.place
+autoconfig.thumbs.place
+autodiscover.thumbs.place
+bernd.wechner.info
+bigfoot.thumbs.place
+cadmus.thumbs.place
+
+cloud.hobart.gamessociety.info
+
+cloud.hogs.org.au
+cyclops.thumbs.place
+dal-test.thumbs.place
+gamessociety.info
+hermes.thumbs.place
+hermes.wechner.info
+hitch-hiking.info
+hobart.gamessociety.info
+hogs.org.au
+joplin.thumbs.place
+leaderboard.space
+montagu.street-library.info
+nephele.thumbs.place
+nessie.thumbs.place
+sandbox.bernd.wechner.info
+sandbox.dal-test.thumbs.place
+sandbox.gamessociety.info
+sandbox.hitch-hiking.info
+sandbox.hobart.gamessociety.info
+sandbox.hogs.org.au
+sandbox.leaderboard.space
+sandbox.montagu.street-library.info
+sandbox.speedtest.thumbs.place
+sandbox.street-library.info
+sandbox.trueskill.info
+sandbox.webstat.thumbs.place
+sandbox.wechner.info
+shelob.thumbs.place
+speedtest.thumbs.place
+street-library.info
+trueskill.info
+webstat.thumbs.place
+www.hogs.org.au
+
+*.thumbs.place
+*.leaderboard.space
+*.wechner.info
+*.street-library.info
+*.hitch-hiking.info
+*.trueskill.info
+*.hogs.org.au
+
+
+
+config acme
+        option state_dir '/etc/acme'
+        option account_email 'cerberus.montagu@gmail.com'
+        option debug '0'
+
+config cert 'thumbs-place'
+        option use_staging '1'
+        option keylength '2048'
+        option update_uhttpd '1'
+        option update_nginx '0'
+        option update_haproxy '0'
+        option enabled '1'
+        option validation_method 'webroot'
+        option webroot '/www'
+        list domains '*.thumbs.place'
+        list domains '*.leaderboard.space'
+        list domains '*.wechner.info'
+        list domains '*.street-library.info'
+        list domains '*.hitch-hiking.info'
+        list domains '*.trueskill.info'
+        list domains '*.hogs.org.au'
+
