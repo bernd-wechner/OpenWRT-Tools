@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Opens a tty connection to the knot resolver.
 # 
@@ -10,7 +10,7 @@
 #
 # Just a quick shortcut to getting at CLI for the resolver. 
 
-tty_dir="$(uci get resolver.kresd.rundir)/tty"
+tty_dir="$(uci get resolver.kresd.rundir)/control"
 tty=$(ls -1 $tty_dir | head -1)
 
 if [[ $tty =~ ^-?[0-9]+$ && -a /proc/$tty ]]; then 

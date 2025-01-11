@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# A simple tester that publishes the OpenWRT tools to a router, and runs the provided args on the router using ssh
+#
+# Needs configuring of course for a given router as does the sshe access.
+
+# Router configs
+router=Cerberus
+router_account=root@cerberus.lan
+
+# Publish these tools (silently)
+./publish > /dev/null 
+
+# run the provided commands remotely
+ssh $router_account ". .profile; $@"

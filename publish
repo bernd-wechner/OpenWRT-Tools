@@ -67,6 +67,7 @@ putils=(clear_notifications.sh
 		knot.sh
 		lanstat.py
 		list_notifications.sh
+		NAT.py
 		ncdip.py
 		nodename.py
 		search.sh
@@ -75,10 +76,11 @@ putils=(clear_notifications.sh
 		wantimes.py
 		whois.sh)
 
-# Global utilities: Some go to /usr/bin so they are in the defaul path for cron and the hotplug daemon
+# Global utilities: Some go to /usr/bin so they are in the default path for cron and the hotplug daemon
 gutils=(ddns_domains.sh
 		ddns_watch.sh
 		ddns_web.sh
+		ddns_check.sh
 		ddnsip.py
 		dhcp_watch.sh
 		IPnames.py

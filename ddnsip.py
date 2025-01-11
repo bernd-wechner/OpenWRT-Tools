@@ -5,8 +5,7 @@
 # 
 # A special domain "WAN" is listed for the apparent WAN address.
  
-import os, subprocess, urllib, sys, argparse, json
-import xml.etree.ElementTree as ET  # The API returns XML
+import os, subprocess, sys, argparse, json
 
 # Configurations
 web_header = ["NameCheap", "Cerberus", "AlwaysData"]
@@ -86,6 +85,9 @@ else:
     
     if isinstance(Domains, list):
         for Domain in Domains:
+            # We have to loop over all the hosts here
+            # And it's then Host.Domain
+            
             IP = getApparentIP(Domain)
             if IP != WANIP:
                 errors += 1

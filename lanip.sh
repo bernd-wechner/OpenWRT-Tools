@@ -208,7 +208,7 @@ lan_names=()
 lan_ips=()
 lan_macs=()
 
-#Given a a lan IP config (name, IP, MAC), stores it in the lists above andsets a result for feedback. 
+#Given a a lan IP config (name, IP, MAC), stores it in the lists above and sets a result for feedback. 
 store_lanip()
 {
 	result=""  # Return a result 
@@ -254,15 +254,15 @@ store_lanip()
 				if [[ $same_ip != y ]]; then
 					if [[ $old_ip == $unknown_ip ]]; then 
 						lan_ips[$i]=$new_ip
-		       			result=Updated
+						result=Updated
 						if [[ $debug == y ]]; then 	
-	       					echo -e "Merge: Updating IP for MAC:\n\tMAC: $old_mac\n\tIPs: $old_ip -> $new_ip"
-	       				fi
+							echo -e "Merge: Updating IP for MAC:\n\tMAC: $old_mac\n\tIPs: $old_ip -> $new_ip"
+						fi
 					elif [[ $new_ip != $unknown_ip ]]; then 
-	       				result="Conflicting IPs for MAC:\n\tMAC: $old_mac\n\tIPs: $old_ip -> $new_ip"
-	       			else
-		       			result=Ignored
-	       			fi
+						result="Conflicting IPs for MAC:\n\tMAC: $old_mac\n\tIPs: $old_ip -> $new_ip"
+					else
+						result=Ignored
+					fi
 				fi
 			
 				if [[ $same_name != y ]]; then
